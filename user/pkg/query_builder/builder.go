@@ -1,9 +1,12 @@
 package queryBuilder
 
-import (
-	"user/internal/repository"
-)
-
 type QueryBuilder interface {
-	BuildQuery(filter *repository.GetFilter) (string, []interface{}, error)
+	// SetBaseSQL sets the base SQL statement
+	SetBaseSQL(baseSQL string) QueryBuilder
+
+	// SetWhere sets the WHERE condition
+	SetWhere(condition string, value interface{}) QueryBuilder
+
+	// Generate generates the SQL statement
+	Generate() (string, []interface{})
 }
