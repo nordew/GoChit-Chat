@@ -3,6 +3,7 @@ package sqlBuilder
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"user/internal/repository"
 )
 
@@ -26,17 +27,17 @@ func (b *sqlBuilder) BuildDynamicQuery(filter *repository.GetFilter) (string, []
 	sqlQuery := fmt.Sprintf("SELECT %s FROM %s WHERE", formatFields(b.fields), b.table)
 	var args []interface{}
 
-	if filter.ID != "" {
-		sqlQuery += ` id = $1`
-		args = append(args, filter.ID)
-	}
+	for i, field := range b.fields {
+		placeholder := fmt.Sprintf("$%d", i+1)
 
-	if filter.Email != "" {
-		if len(args) > 0 {
-			sqlQuery += ` OR`
+		if value := getField(filter, field); value != "" {
+			if len(args) > 0 {
+				sqlQuery += ` OR`
+			}
+
+			sqlQuery += fmt.Sprintf(" %s = %s", field, placeholder)
+			args = append(args, value)
 		}
-		sqlQuery += ` email = $2`
-		args = append(args, filter.Email)
 	}
 
 	if len(args) == 0 {
@@ -46,6 +47,17 @@ func (b *sqlBuilder) BuildDynamicQuery(filter *repository.GetFilter) (string, []
 	return sqlQuery, args, nil
 }
 
+func getField(filter *repository.GetFilter, field string) string {
+	switch field {
+	case "ID":
+		return filter.ID
+	case "Email":
+		return filter.Email
+	default:
+		return ""
+	}
+}
+
 func formatFields(fields []string) string {
-	return fmt.Sprintf("%s", fields)
+	return strings.Join(fields, ", ")
 }
