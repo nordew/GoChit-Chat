@@ -13,12 +13,12 @@ const (
 )
 
 type User struct {
-	ID           uuid.UUID
-	Name         string
-	Email        string
-	Password     string
-	RefreshToken string
-	Role         Role
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           uuid.UUID `db:"id"`
+	Name         string    `db:"name"`
+	Email        string    `db:"email"`
+	Password     string    `db:"password"`
+	RefreshToken string    `db:"refresh_token"`
+	Role         Role      `db:"role"`
+	CreatedAt    time.Time `db:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at"`
 }
