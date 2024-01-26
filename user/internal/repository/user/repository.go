@@ -12,12 +12,12 @@ import (
 )
 
 type userRepo struct {
-	db *pgxpool.Conn
+	db *pgxpool.Pool
 
 	filter queryBuilder.QueryBuilder
 }
 
-func NewUserRepository(db *pgxpool.Conn, filter queryBuilder.QueryBuilder) repository.UserRepository {
+func NewUserRepository(db *pgxpool.Pool, filter queryBuilder.QueryBuilder) repository.UserRepository {
 	return &userRepo{
 		db:     db,
 		filter: filter,
