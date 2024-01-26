@@ -3,8 +3,10 @@ package user
 import (
 	"context"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"user/internal/model"
 	"user/internal/repository"
-	"user/internal/repository/user/model"
+	"user/internal/repository/user/converter"
+	repoModel "user/internal/repository/user/model"
 )
 
 type userRepo struct {
@@ -29,14 +31,14 @@ func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 func (u *userRepo) Get(ctx context.Context, email string) (*model.User, error) {
 	sqlQuery := `SELECT id, name, email, password, refresh_token, role, created_at, updated_at FROM users WHERE email = $1`
 
-	var user model.User
+	var user repoModel.User
 	err := u.db.QueryRow(ctx, sqlQuery, email).
 		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.RefreshToken, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	return converter.ToUserFromRepo(&user), nil
 }
 
 func (u *userRepo) ChangePassword(ctx context.Context, email, password string) error {
