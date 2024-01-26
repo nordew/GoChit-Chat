@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"user/internal/repository/user/model"
+	"user/internal/model"
 )
 
 type UserRepository interface {
