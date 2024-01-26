@@ -7,14 +7,20 @@ import (
 	"user/internal/repository"
 	"user/internal/repository/user/dao"
 	repoModel "user/internal/repository/user/model"
+	queryBuilder "user/pkg/query_builder"
 )
 
 type userRepo struct {
 	db *pgxpool.Conn
+
+	filter queryBuilder.QueryBuilder
 }
 
-func NewUserRepository(db *pgxpool.Conn) repository.UserRepository {
-	return &userRepo{db: db}
+func NewUserRepository(db *pgxpool.Conn, filter queryBuilder.QueryBuilder) repository.UserRepository {
+	return &userRepo{
+		db:     db,
+		filter: filter,
+	}
 }
 
 func (u *userRepo) Create(ctx context.Context, user *model.User) error {
@@ -29,10 +35,13 @@ func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 }
 
 func (u *userRepo) Get(ctx context.Context, filter *repository.GetFilter) (*model.User, error) {
-	sqlQuery := `SELECT id, name, email, password, refresh_token, role, created_at, updated_at FROM users WHERE email = $1 or id = $2`
+	sqlQuery, args, err := u.filter.BuildQuery(filter)
+	if err != nil {
+		return nil, err
+	}
 
 	var user repoModel.User
-	err := u.db.QueryRow(ctx, sqlQuery, filter.Email, filter.ID).
+	err = u.db.QueryRow(ctx, sqlQuery, args...).
 		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.RefreshToken, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
