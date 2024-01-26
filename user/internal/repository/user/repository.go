@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"user/internal/model"
 	"user/internal/repository"
@@ -26,7 +27,12 @@ func NewUserRepository(db *pgxpool.Conn, filter queryBuilder.QueryBuilder) repos
 func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 	sqlQuery := `INSERT INTO users (id, name, email, password, role, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-	_, err := u.db.Exec(ctx, sqlQuery, user.ID, user.Name, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
+	rows, err := u.db.Query(ctx, sqlQuery)
+	if err != nil {
+		return err
+	}
+
+	err = pgxscan.ScanOne(&user, rows)
 	if err != nil {
 		return err
 	}
@@ -41,8 +47,13 @@ func (u *userRepo) Get(ctx context.Context, filter *repository.GetFilter) (*mode
 		Generate()
 
 	var user repoModel.User
-	err := u.db.QueryRow(ctx, sqlQuery).
-		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.RefreshToken, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+
+	rows, err := u.db.Query(ctx, sqlQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	err = pgxscan.ScanOne(&user, rows)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +64,12 @@ func (u *userRepo) Get(ctx context.Context, filter *repository.GetFilter) (*mode
 func (u *userRepo) Update(ctx context.Context, user *model.User) error {
 	sqlQuery := `UPDATE users SET name = $1, email = $2, password = $3, role = $4, updated_at = $5 WHERE id = $6`
 
-	_, err := u.db.Exec(ctx, sqlQuery, user.Name, user.Email, user.Password, user.Role, user.UpdatedAt, user.ID)
+	rows, err := u.db.Query(ctx, sqlQuery)
+	if err != nil {
+		return err
+	}
+
+	err = pgxscan.ScanOne(&user, rows)
 	if err != nil {
 		return err
 	}
