@@ -5,7 +5,7 @@ import (
 	repoModel "user/internal/repository/user/model"
 )
 
-func toUserFromRepo(user *repoModel.User) *model.User {
+func ToUserFromRepo(user *repoModel.User) *model.User {
 	return &model.User{
 		ID:        user.ID,
 		Name:      user.Name,
