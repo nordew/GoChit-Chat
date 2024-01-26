@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-type UserRole string
+type Role string
 
 const (
-	Admin   UserRole = "ADMIN"
-	Default UserRole = "User"
+	AdminRole Role = "ADMIN"
+	UserRole  Role = "USER"
 )
 
 type User struct {
@@ -18,7 +18,7 @@ type User struct {
 	Email        string
 	Password     string
 	RefreshToken string
-	Role         UserRole
+	Role         Role
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
