@@ -28,11 +28,11 @@ func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (u *userRepo) Get(ctx context.Context, email string) (*model.User, error) {
-	sqlQuery := `SELECT id, name, email, password, refresh_token, role, created_at, updated_at FROM users WHERE email = $1`
+func (u *userRepo) Get(ctx context.Context, filter *repository.GetFilter) (*model.User, error) {
+	sqlQuery := `SELECT id, name, email, password, refresh_token, role, created_at, updated_at FROM users WHERE email = $1 or id = $2`
 
 	var user repoModel.User
-	err := u.db.QueryRow(ctx, sqlQuery, email).
+	err := u.db.QueryRow(ctx, sqlQuery, filter.Email, filter.ID).
 		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.RefreshToken, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
