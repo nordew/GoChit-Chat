@@ -1,63 +1,58 @@
 package sqlBuilder
 
 import (
-	"errors"
 	"fmt"
-	"strings"
-	"user/internal/repository"
+	queryBuilder "user/pkg/query_builder"
 )
 
-type sqlBuilder struct {
-	table  string
-	fields []string
+type Stmt struct {
+	// baseSQL is the base SQL statement
+	baseSQL string
+
+	// whereCounter is the counter for WHERE condition
+	whereCounter uint
+
+	// values is the slice of values
+	values []interface{}
+
+	// formattedSQL is the formatted SQL statement
+	formattedSQL string
 }
 
-func NewSqlBuilder(table string, fields []string) *sqlBuilder {
-	return &sqlBuilder{
-		table:  table,
-		fields: fields,
-	}
+func NewStmt() queryBuilder.QueryBuilder {
+	return &Stmt{}
 }
 
-func (b *sqlBuilder) BuildDynamicQuery(filter *repository.GetFilter) (string, []interface{}, error) {
-	if filter == nil {
-		return "", nil, errors.New("filter is nil")
-	}
-
-	sqlQuery := fmt.Sprintf("SELECT %s FROM %s WHERE", formatFields(b.fields), b.table)
-	var args []interface{}
-
-	for i, field := range b.fields {
-		placeholder := fmt.Sprintf("$%d", i+1)
-
-		if value := getField(filter, field); value != "" {
-			if len(args) > 0 {
-				sqlQuery += ` OR`
-			}
-
-			sqlQuery += fmt.Sprintf(" %s = %s", field, placeholder)
-			args = append(args, value)
-		}
-	}
-
-	if len(args) == 0 {
-		return "", nil, errors.New("filter criteria not provided")
-	}
-
-	return sqlQuery, args, nil
+func (s *Stmt) SetBaseSQL(baseSQL string) queryBuilder.QueryBuilder {
+	s.baseSQL = baseSQL
+	return s
 }
 
-func getField(filter *repository.GetFilter, field string) string {
-	switch field {
-	case "ID":
-		return filter.ID
-	case "Email":
-		return filter.Email
-	default:
-		return ""
+func (s *Stmt) SetWhere(condition string, value interface{}) queryBuilder.QueryBuilder {
+	condition = fmt.Sprintf("%s = $%d", condition, len(s.values)+1)
+
+	if s.whereCounter == 0 {
+		condition = fmt.Sprintf("WHERE %s", condition)
+	} else {
+		condition = fmt.Sprintf("AND %s", condition)
 	}
+
+	if s.formattedSQL == "" {
+		s.formattedSQL = fmt.Sprintf("%s %s", s.baseSQL, condition)
+	} else {
+		s.formattedSQL = fmt.Sprintf("%s %s", s.formattedSQL, condition)
+	}
+
+	s.values = append(s.values, value)
+	s.whereCounter++
+
+	return s
 }
 
-func formatFields(fields []string) string {
-	return strings.Join(fields, ", ")
+func (s *Stmt) Generate() (string, []interface{}) {
+	if s.formattedSQL == "" {
+		return s.baseSQL, s.values
+	}
+
+	return s.formattedSQL, s.values
 }
