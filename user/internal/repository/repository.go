@@ -2,12 +2,11 @@ package repository
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"user/internal/model"
 )
 
 type GetFilter struct {
-	ID    uuid.UUID
+	ID    string
 	Email string
 }
 
