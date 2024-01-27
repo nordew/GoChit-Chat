@@ -31,10 +31,9 @@ func GetConfig() (*Config, error) {
 }
 
 func MakePGConn(cfg *Config) string {
-	connectionString := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
+	connectionString := fmt.Sprintf("postgres://%s:%s@postgres/%s?sslmode=%s",
 		url.QueryEscape(cfg.PGUser),
 		url.QueryEscape(cfg.PGPassword),
-		url.QueryEscape(cfg.PGHost),
 		url.QueryEscape(cfg.PGDatabase),
 		url.QueryEscape(cfg.PGSSLMode),
 	)
