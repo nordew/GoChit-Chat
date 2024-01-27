@@ -11,6 +11,21 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - chat-network
+
+  chat-user:
+    image: chat-user:latest
+    ports:
+      - "50051:50051"
+    depends_on:
+      - postgres
+    networks:
+      - chat-network
+
+networks:
+  chat-network:
+    driver: bridge
 
 volumes:
   postgres_data:
