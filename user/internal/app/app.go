@@ -38,17 +38,17 @@ func injectDependencies(ctx context.Context) *grpcApp.App {
 	}
 
 	if err := godotenv.Load(); err != nil {
-		zapLogger.Error("failed to load .env file", zap.Error(err), zap.String("op", op))
+		log.Fatalf("failed to load env: %v", err)
 	}
 
 	cfg, err := config.GetConfig()
 	if err != nil {
-		zapLogger.Error("failed to get config", zap.Error(err), zap.String("op", op))
+		log.Fatalf("failed to get config: %v", err)
 	}
 
 	pool, err := setupDatabase(ctx, cfg)
 	if err != nil {
-		zapLogger.Error("failed to setup database", zap.Error(err), zap.String("op", op))
+		log.Fatalf("failed to setup database: %v", err)
 	}
 
 	userRepository := userRepo.NewUserRepository(pool, zapLogger)
