@@ -6,7 +6,7 @@ CREATE TABLE user_table (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     refresh_token VARCHAR NOT NULL DEFAULT '',
-    role VARCHAR(50) NOT NULL CHECK (role IN ('USER', 'ADMIN')) DEFAULT 'USER',
+    role INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT current_timestamp,
     updated_at TIMESTAMP DEFAULT current_timestamp
 );
