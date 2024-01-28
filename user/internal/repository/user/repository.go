@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
 	"user/internal/model"
@@ -29,42 +30,27 @@ func NewUserRepository(db *pgxpool.Pool, log *zap.Logger) repository.UserReposit
 func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 	const op = "userRepo.Create"
 
-	emailExists, err := u.emailExists(ctx, user.Email)
-	if err != nil {
-		return err
-	}
-
-	if emailExists {
-		return userErrors.ErrEmailAlreadyExists
-	}
-
 	sqlQuery := `
 		INSERT INTO users (id, name, email, password, role, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (email) DO NOTHING
 	`
 
-	_, err = u.db.Exec(ctx, sqlQuery, user.ID, user.Name, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
+	_, err := u.db.Exec(ctx, sqlQuery, user.ID, user.Name, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
 		u.log.Error("error creating user", zap.Error(err), zap.String("op", op))
-		return err
+		return handleEmailConflictError(err)
 	}
 
 	return nil
 }
 
-func (u *userRepo) emailExists(ctx context.Context, email string) (bool, error) {
-	const op = "userRepo.emailExists"
-
-	sqlQuery := `SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)`
-
-	var exists bool
-	err := u.db.QueryRow(ctx, sqlQuery, email).Scan(&exists)
-	if err != nil {
-		u.log.Error("error checking if email exists", zap.Error(err), zap.String("op", op))
-		return false, err
+func handleEmailConflictError(err error) error {
+	pqErr, isPGError := err.(*pgconn.PgError)
+	if isPGError && pqErr.Code == "23505" {
+		return userErrors.ErrEmailAlreadyExists
 	}
-
-	return exists, nil
+	return err
 }
 
 func (u *userRepo) Get(ctx context.Context, id string) (*model.User, error) {
