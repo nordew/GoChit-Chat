@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	ErrInvalidName         = errors.New("invalid name")
-	ErrInvalidEmail        = errors.New("invalid email")
-	ErrInvalidPassword     = errors.New("invalid password")
-	ErrEmailAlreadyExists  = errors.New("email already exists")
-	ErrPasswordNotMatching = errors.New("password not matching")
+	ErrInvalidName          = errors.New("invalid name")
+	ErrInvalidEmail         = errors.New("invalid email")
+	ErrInvalidPassword      = errors.New("invalid password")
+	ErrEmailAlreadyExists   = errors.New("email already exists")
+	ErrWrongEmailOrPassword = errors.New("wrong email or password")
 )
 
 type userService struct {
