@@ -10,6 +10,7 @@ import (
 	"user/internal/repository"
 	"user/internal/repository/user/dao"
 	repoModel "user/internal/repository/user/model"
+	userErrors "user/pkg/user_errors"
 )
 
 type userRepo struct {
@@ -28,9 +29,21 @@ func NewUserRepository(db *pgxpool.Pool, log *zap.Logger) repository.UserReposit
 func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 	const op = "userRepo.Create"
 
-	sqlQuery := `INSERT INTO users (id, name, email, password, role, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	emailExists, err := u.emailExists(ctx, user.Email)
+	if err != nil {
+		return err
+	}
 
-	_, err := u.db.Exec(ctx, sqlQuery, user.ID, user.Name, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
+	if emailExists {
+		return userErrors.ErrEmailAlreadyExists
+	}
+
+	sqlQuery := `
+		INSERT INTO users (id, name, email, password, role, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+
+	_, err = u.db.Exec(ctx, sqlQuery, user.ID, user.Name, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
 		u.log.Error("error creating user", zap.Error(err), zap.String("op", op))
 		return err
@@ -39,13 +52,12 @@ func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (u *userRepo) CheckIfEmailExists(ctx context.Context, email string) (bool, error) {
-	const op = "userRepo.checkIfEmailExists"
+func (u *userRepo) emailExists(ctx context.Context, email string) (bool, error) {
+	const op = "userRepo.emailExists"
 
-	sqlQuery := `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`
+	sqlQuery := `SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)`
 
 	var exists bool
-
 	err := u.db.QueryRow(ctx, sqlQuery, email).Scan(&exists)
 	if err != nil {
 		u.log.Error("error checking if email exists", zap.Error(err), zap.String("op", op))
