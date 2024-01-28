@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"time"
 	"user/internal/model"
+	userErrors "user/pkg/user_errors"
 )
 
 func (u *userService) Update(ctx context.Context, userUpdate *model.UserUpdate) error {
@@ -65,7 +66,7 @@ func (u *userService) changeWithPassword(ctx context.Context, newUser *model.Use
 	err := u.hasher.Compare(user.Password, newUser.OldPassword)
 	if err != nil {
 		u.log.Error("wrong email or password", zap.String("op", op))
-		return ErrWrongEmailOrPassword
+		return userErrors.ErrWrongEmailOrPassword
 	}
 
 	hashed, err := u.hasher.Hash(newUser.NewPassword)
