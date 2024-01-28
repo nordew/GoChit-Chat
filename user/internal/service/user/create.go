@@ -2,10 +2,12 @@ package user
 
 import (
 	"context"
+	"errors"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"time"
 	"user/internal/model"
+	userErrors "user/pkg/user_errors"
 )
 
 func (u *userService) Create(ctx context.Context, user *model.User) (string, error) {
@@ -15,17 +17,6 @@ func (u *userService) Create(ctx context.Context, user *model.User) (string, err
 	if err != nil {
 		u.log.Error("error validating user", zap.Error(err), zap.String("op", op))
 		return "", err
-	}
-
-	exists, err := u.userRepo.CheckIfEmailExists(ctx, user.Email)
-	if err != nil {
-		u.log.Error("error checking if email exists", zap.Error(err), zap.String("op", op))
-		return "", err
-	}
-
-	if exists {
-		u.log.Error("email already exists", zap.String("op", op))
-		return "", ErrEmailAlreadyExists
 	}
 
 	hashedPassword, err := u.hasher.Hash(user.Password)
@@ -48,6 +39,10 @@ func (u *userService) Create(ctx context.Context, user *model.User) (string, err
 
 	err = u.userRepo.Create(ctx, parsedUser)
 	if err != nil {
+		if errors.Is(err, userErrors.ErrEmailAlreadyExists) {
+			return "", userErrors.ErrEmailAlreadyExists
+		}
+
 		u.log.Error("error creating user", zap.Error(err), zap.String("op", op))
 		return "", err
 	}
