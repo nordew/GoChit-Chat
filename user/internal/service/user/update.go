@@ -7,8 +7,6 @@ import (
 	"user/internal/model"
 )
 
-var ()
-
 func (u *userService) Update(ctx context.Context, userUpdate *model.UserUpdate) error {
 	const op = "userService.Update"
 
@@ -66,8 +64,8 @@ func (u *userService) changeWithPassword(ctx context.Context, newUser *model.Use
 
 	err := u.hasher.Compare(user.Password, newUser.OldPassword)
 	if err != nil {
-		u.log.Error("error password not matching", zap.String("op", op))
-		return ErrPasswordNotMatching
+		u.log.Error("wrong email or password", zap.String("op", op))
+		return ErrWrongEmailOrPassword
 	}
 
 	hashed, err := u.hasher.Hash(newUser.NewPassword)
