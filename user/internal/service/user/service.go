@@ -1,22 +1,16 @@
 package user
 
 import (
-	"errors"
 	"go.uber.org/zap"
 	"regexp"
 	"unicode/utf8"
 	"user/internal/repository"
 	"user/internal/service"
 	"user/pkg/hasher"
+	userErrors "user/pkg/user_errors"
 )
 
-var (
-	ErrInvalidName          = errors.New("invalid name")
-	ErrInvalidEmail         = errors.New("invalid email")
-	ErrInvalidPassword      = errors.New("invalid password")
-	ErrEmailAlreadyExists   = errors.New("email already exists")
-	ErrWrongEmailOrPassword = errors.New("wrong email or password")
-)
+var ()
 
 type userService struct {
 	userRepo repository.UserRepository
@@ -36,15 +30,15 @@ func NewUserService(userRepo repository.UserRepository, hasher hasher.PasswordHa
 
 func validateUser(name, email, password string) error {
 	if name == "" || utf8.RuneCountInString(name) < 3 || utf8.RuneCountInString(name) > 30 {
-		return ErrInvalidName
+		return userErrors.ErrInvalidName
 	}
 
 	if !isValidEmail(email) {
-		return ErrInvalidEmail
+		return userErrors.ErrInvalidEmail
 	}
 
 	if password == "" || utf8.RuneCountInString(password) < 8 || utf8.RuneCountInString(password) > 30 {
-		return ErrInvalidPassword
+		return userErrors.ErrInvalidPassword
 	}
 
 	return nil
