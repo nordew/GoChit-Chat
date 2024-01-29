@@ -15,6 +15,10 @@ type Config struct {
 	PGSSLMode  string `env:"PG_SSL_MODE"`
 
 	GRPCPort int `env:"GRPC_PORT"`
+
+	JWTSecret string `env:"JWT_SECRET"`
+
+	Salt string `env:"SALT"`
 }
 
 var (
