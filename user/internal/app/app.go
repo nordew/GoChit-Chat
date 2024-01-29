@@ -15,7 +15,8 @@ import (
 	"user/internal/config"
 	userRepo "user/internal/repository/user"
 	"user/internal/service/user"
-	bcryptHasher "user/pkg/hasher/bcrypt"
+	"user/pkg/auth"
+	bcryptHasher "user/pkg/hasher"
 )
 
 func MustRun(ctx context.Context) {
@@ -52,8 +53,10 @@ func injectDependencies(ctx context.Context) *grpcApp.App {
 	}
 
 	userRepository := userRepo.NewUserRepository(pool, zapLogger)
-	hasher := bcryptHasher.NewPasswordHasher()
-	userService := user.NewUserService(userRepository, hasher, zapLogger)
+	hasher := bcryptHasher.NewPasswordHasher(cfg.Salt)
+	authenticator := auth.NewAuth(cfg.JWTSecret, zapLogger)
+
+	userService := user.NewUserService(userRepository, hasher, authenticator, zapLogger)
 
 	grpcServer := grpc.NewServer()
 
