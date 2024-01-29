@@ -1,29 +1,31 @@
 package user
 
 import (
-	"go.uber.org/zap"
 	"regexp"
 	"unicode/utf8"
 	"user/internal/repository"
 	"user/internal/service"
+	"user/pkg/auth"
 	"user/pkg/hasher"
 	userErrors "user/pkg/user_errors"
-)
 
-var ()
+	"go.uber.org/zap"
+)
 
 type userService struct {
 	userRepo repository.UserRepository
 
 	hasher hasher.PasswordHasher
+	auth   auth.Authenticator
 
 	log *zap.Logger
 }
 
-func NewUserService(userRepo repository.UserRepository, hasher hasher.PasswordHasher, log *zap.Logger) service.UserService {
+func NewUserService(userRepo repository.UserRepository, hasher hasher.PasswordHasher, auth auth.Authenticator, log *zap.Logger) service.UserService {
 	return &userService{
 		userRepo: userRepo,
 		hasher:   hasher,
+		auth:     auth,
 		log:      log,
 	}
 }
@@ -33,7 +35,7 @@ func validateUser(name, email, password string) error {
 		return userErrors.ErrInvalidName
 	}
 
-	if !isValidEmail(email) {
+	if !IsValidEmail(email) {
 		return userErrors.ErrInvalidEmail
 	}
 
@@ -44,7 +46,7 @@ func validateUser(name, email, password string) error {
 	return nil
 }
 
-func isValidEmail(email string) bool {
+func IsValidEmail(email string) bool {
 	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 
 	re := regexp.MustCompile(emailRegex)
