@@ -13,8 +13,6 @@ func (i *Implementation) Update(ctx context.Context, req *desc.UpdateUserRequest
 
 	converted := dao.ToUserFromUpdateRequest(req)
 
-	i.log.Info("user converted: ", zap.Any("user", converted))
-
 	err := i.userService.Update(ctx, converted)
 	if err != nil {
 		i.log.Error("error updating user", zap.Error(err), zap.String("op", op))
