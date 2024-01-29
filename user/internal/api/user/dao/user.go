@@ -1,9 +1,11 @@
 package dao
 
 import (
+	"user/internal/model"
+	"user/internal/service"
+
 	desc "github.com/nordew/GoChitChat-External/gen/go/user"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"user/internal/model"
 )
 
 func ToUserFromCreateRequest(req *desc.CreateUserRequest) *model.User {
@@ -14,14 +16,18 @@ func ToUserFromCreateRequest(req *desc.CreateUserRequest) *model.User {
 	}
 }
 
-func ToUserFromUpdateRequest(req *desc.UpdateUserRequest) *model.UserUpdate {
-	return &model.UserUpdate{
+func ToUserFromUpdateRequest(req *desc.UpdateUserRequest) *service.UpdateUserRequest {
+	user := &model.UserUpdate{
 		ID:          req.GetId(),
+		Email:       req.GetEmail().GetValue(),
 		Name:        req.GetName().GetValue(),
-		Email:       req.GetEmail(),
 		Password:    req.GetPassword(),
 		OldPassword: req.GetOldPassword().GetValue(),
-		NewPassword: req.GetNewPassword().GetValue(),
+		NewPassword: req.NewPassword.GetValue(),
+	}
+
+	return &service.UpdateUserRequest{
+		User: user,
 	}
 }
 
@@ -36,5 +42,13 @@ func ToResponseFromUser(user *model.User) *desc.GetUserResponse {
 		Role:      int32(user.Role),
 		CreatedAt: createdAtTimestamp,
 		UpdatedAt: updatedAtTimestamp,
+	}
+}
+
+func ToResponseFromCreateUserResponse(resp *service.CreateUserResponse) *desc.CreateUserResponse {
+	return &desc.CreateUserResponse{
+		Id:           resp.Id,
+		AccessToken:  resp.AccessToken,
+		RefreshToken: resp.RefreshToken,
 	}
 }
