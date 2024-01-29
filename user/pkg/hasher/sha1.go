@@ -1,26 +1,40 @@
-package bcryptHasher
+package hasher
 
 import (
-	"golang.org/x/crypto/bcrypt"
-	"user/pkg/hasher"
+	"crypto/sha1"
+	"fmt"
+	userErrors "user/pkg/user_errors"
 )
 
 type passwordHasher struct {
+	salt string
 }
 
-func NewPasswordHasher() hasher.PasswordHasher {
-	return &passwordHasher{}
+func NewPasswordHasher(salt string) PasswordHasher {
+	return &passwordHasher{
+		salt: salt,
+	}
 }
 
 func (p *passwordHasher) Hash(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
+	hash := sha1.New()
+
+	if _, err := hash.Write([]byte(password)); err != nil {
 		return "", err
 	}
 
-	return string(hashedPassword), nil
+	return fmt.Sprintf("%x", hash.Sum([]byte(p.salt))), nil
 }
 
 func (p *passwordHasher) Compare(hashedPassword, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	newHashedPassword, err := p.Hash(password)
+	if err != nil {
+		return err
+	}
+
+	if hashedPassword != newHashedPassword {
+		return userErrors.ErrWrongEmailOrPassword
+	}
+
+	return nil
 }
