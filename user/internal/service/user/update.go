@@ -4,33 +4,38 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"time"
+	"unicode/utf8"
 	"user/internal/model"
+	"user/internal/service"
 	userErrors "user/pkg/user_errors"
 )
 
-func (u *userService) Update(ctx context.Context, userUpdate *model.UserUpdate) error {
+func (u *userService) Update(ctx context.Context, request *service.UpdateUserRequest) error {
 	const op = "userService.Update"
 
-	err := validateUser(userUpdate.Name, userUpdate.Email, userUpdate.NewPassword)
-	if err != nil {
-		u.log.Error("error validating user", zap.Error(err), zap.String("op", op))
-		return err
-	}
-
-	oldUser, err := u.userRepo.Get(ctx, userUpdate.ID)
+	oldUser, err := u.userRepo.GetById(ctx, request.User.ID)
 	if err != nil {
 		u.log.Error("error getting user", zap.Error(err), zap.String("op", op))
 		return err
 	}
 
-	if userUpdate.Password {
-		if err := u.changeWithPassword(ctx, userUpdate, oldUser); err != nil {
+	if request.User.Password {
+		err := u.updateUserPassword(ctx, oldUser, request.User.OldPassword, request.User.NewPassword)
+		if err != nil {
 			return err
 		}
-	} else {
-		updatedUser := getUpdatedUser(oldUser, userUpdate)
-		if err := u.userRepo.Update(ctx, updatedUser); err != nil {
-			u.log.Error("error updating user", zap.Error(err), zap.String("op", op))
+	}
+
+	if request.User.Name != "" {
+		err := u.updateUserName(ctx, oldUser, request.User.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	if request.User.Email != "" {
+		err := u.updateUserEmail(ctx, oldUser, request.User.Email)
+		if err != nil {
 			return err
 		}
 	}
@@ -38,49 +43,106 @@ func (u *userService) Update(ctx context.Context, userUpdate *model.UserUpdate) 
 	return nil
 }
 
-func getUpdatedUser(oldUser *model.User, userUpdate *model.UserUpdate) *model.User {
-	updatedUser := &model.User{
-		ID:        oldUser.ID,
-		Name:      oldUser.Name,
-		Email:     oldUser.Email,
-		Password:  oldUser.Password,
-		Role:      oldUser.Role,
-		CreatedAt: oldUser.CreatedAt,
-		UpdatedAt: time.Now(),
-	}
+func (u *userService) updateUserPassword(ctx context.Context, oldUser *model.User, oldPassword string, newPassword string) error {
+	const op = "userService.updateUserPassword"
 
-	if userUpdate.Name != "" {
-		updatedUser.Name = userUpdate.Name
-	}
-
-	if userUpdate.Email != "" {
-		updatedUser.Email = userUpdate.Email
-	}
-
-	return updatedUser
-}
-
-func (u *userService) changeWithPassword(ctx context.Context, newUser *model.UserUpdate, user *model.User) error {
-	const op = "userService.changeWithPassword"
-
-	err := u.hasher.Compare(user.Password, newUser.OldPassword)
+	err := validateUserPassword(newPassword)
 	if err != nil {
-		u.log.Error("wrong email or password", zap.String("op", op))
+		u.log.Error("error validating user password", zap.Error(err), zap.String("op", op))
+		return err
+	}
+
+	err = u.hasher.Compare(oldUser.Password, oldPassword)
+	if err != nil {
+		u.log.Error("error comparing password", zap.Error(err), zap.String("op", op))
 		return userErrors.ErrWrongEmailOrPassword
 	}
 
-	hashed, err := u.hasher.Hash(newUser.NewPassword)
+	hashedPassword, err := u.hasher.Hash(newPassword)
 	if err != nil {
 		u.log.Error("error hashing password", zap.Error(err), zap.String("op", op))
 		return err
 	}
 
-	updatedUser := getUpdatedUser(user, newUser)
-	updatedUser.Password = hashed
+	updatedUser := &model.User{
+		ID:        oldUser.ID,
+		Name:      oldUser.Name,
+		Email:     oldUser.Email,
+		Password:  hashedPassword,
+		Role:      oldUser.Role,
+		UpdatedAt: time.Now(),
+	}
 
-	if err := u.userRepo.Update(ctx, updatedUser); err != nil {
+	err = u.userRepo.Update(ctx, updatedUser)
+	if err != nil {
 		u.log.Error("error updating user", zap.Error(err), zap.String("op", op))
 		return err
+	}
+
+	return nil
+}
+
+func (u *userService) updateUserName(ctx context.Context, oldUser *model.User, newName string) error {
+	const op = "userService.updateUserName"
+
+	err := validateUserName(newName)
+	if err != nil {
+		return err
+	}
+
+	updatedUser := &model.User{
+		ID:        oldUser.ID,
+		Name:      newName,
+		Email:     oldUser.Email,
+		Password:  oldUser.Password,
+		Role:      oldUser.Role,
+		UpdatedAt: time.Now(),
+	}
+
+	err = u.userRepo.Update(ctx, updatedUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *userService) updateUserEmail(ctx context.Context, oldUser *model.User, newEmail string) error {
+	const op = "userService.updateUserEmail"
+
+	valid := IsValidEmail(newEmail)
+	if !valid {
+		return userErrors.ErrInvalidEmail
+	}
+
+	updatedUser := &model.User{
+		ID:        oldUser.ID,
+		Name:      oldUser.Name,
+		Email:     newEmail,
+		Password:  oldUser.Password,
+		Role:      oldUser.Role,
+		UpdatedAt: time.Now(),
+	}
+
+	err := u.userRepo.Update(ctx, updatedUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateUserName(name string) error {
+	if name == "" || utf8.RuneCountInString(name) < 3 || utf8.RuneCountInString(name) > 30 {
+		return userErrors.ErrInvalidName
+	}
+
+	return nil
+}
+
+func validateUserPassword(password string) error {
+	if password == "" || utf8.RuneCountInString(password) < 8 || utf8.RuneCountInString(password) > 30 {
+		return userErrors.ErrInvalidPassword
 	}
 
 	return nil
