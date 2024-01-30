@@ -3,13 +3,14 @@ package user
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
 	"time"
 	"user/internal/model"
 	"user/internal/service"
 	"user/pkg/auth"
 	userErrors "user/pkg/user_errors"
+
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 func (u *userService) Create(ctx context.Context, user *model.User) (*service.CreateUserResponse, error) {
