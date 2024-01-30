@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
 	"time"
 	"unicode/utf8"
 	"user/internal/model"
@@ -10,13 +11,13 @@ import (
 	userErrors "user/pkg/user_errors"
 )
 
-func (u *userService) Update(ctx context.Context, request *service.UpdateUserRequest) error {
+func (u *userService) Update(ctx context.Context, request *service.UpdateUserRequest) *userErrors.CustomErr {
 	const op = "userService.Update"
 
 	oldUser, err := u.userRepo.GetById(ctx, request.User.ID)
 	if err != nil {
 		u.log.Error("error getting user", zap.Error(err), zap.String("op", op))
-		return err
+		return userErrors.NewInternalErr(err)
 	}
 
 	if request.User.Password {
@@ -43,25 +44,25 @@ func (u *userService) Update(ctx context.Context, request *service.UpdateUserReq
 	return nil
 }
 
-func (u *userService) updateUserPassword(ctx context.Context, oldUser *model.User, oldPassword string, newPassword string) error {
+func (u *userService) updateUserPassword(ctx context.Context, oldUser *model.User, oldPassword string, newPassword string) *userErrors.CustomErr {
 	const op = "userService.updateUserPassword"
 
 	err := validateUserPassword(newPassword)
 	if err != nil {
 		u.log.Error("error validating user password", zap.Error(err), zap.String("op", op))
-		return err
+		return userErrors.New(err, "invalid password", codes.InvalidArgument)
 	}
 
 	err = u.hasher.Compare(oldUser.Password, oldPassword)
 	if err != nil {
 		u.log.Error("error comparing password", zap.Error(err), zap.String("op", op))
-		return userErrors.ErrWrongEmailOrPassword
+		return userErrors.New(err, "invalid email", codes.InvalidArgument)
 	}
 
 	hashedPassword, err := u.hasher.Hash(newPassword)
 	if err != nil {
 		u.log.Error("error hashing password", zap.Error(err), zap.String("op", op))
-		return err
+		return userErrors.NewInternalErr(err)
 	}
 
 	updatedUser := &model.User{
@@ -76,18 +77,18 @@ func (u *userService) updateUserPassword(ctx context.Context, oldUser *model.Use
 	err = u.userRepo.Update(ctx, updatedUser)
 	if err != nil {
 		u.log.Error("error updating user", zap.Error(err), zap.String("op", op))
-		return err
+		return userErrors.NewInternalErr(err)
 	}
 
 	return nil
 }
 
-func (u *userService) updateUserName(ctx context.Context, oldUser *model.User, newName string) error {
+func (u *userService) updateUserName(ctx context.Context, oldUser *model.User, newName string) *userErrors.CustomErr {
 	const op = "userService.updateUserName"
 
 	err := validateUserName(newName)
 	if err != nil {
-		return err
+		return userErrors.New(err, "invalid name", codes.InvalidArgument)
 	}
 
 	updatedUser := &model.User{
@@ -101,18 +102,18 @@ func (u *userService) updateUserName(ctx context.Context, oldUser *model.User, n
 
 	err = u.userRepo.Update(ctx, updatedUser)
 	if err != nil {
-		return err
+		return userErrors.NewInternalErr(err)
 	}
 
 	return nil
 }
 
-func (u *userService) updateUserEmail(ctx context.Context, oldUser *model.User, newEmail string) error {
+func (u *userService) updateUserEmail(ctx context.Context, oldUser *model.User, newEmail string) *userErrors.CustomErr {
 	const op = "userService.updateUserEmail"
 
 	valid := IsValidEmail(newEmail)
 	if !valid {
-		return userErrors.ErrInvalidEmail
+		return userErrors.New(userErrors.ErrInvalidEmail, "invalid email", codes.Internal)
 	}
 
 	updatedUser := &model.User{
@@ -126,7 +127,7 @@ func (u *userService) updateUserEmail(ctx context.Context, oldUser *model.User, 
 
 	err := u.userRepo.Update(ctx, updatedUser)
 	if err != nil {
-		return err
+		return userErrors.NewInternalErr(err)
 	}
 
 	return nil
