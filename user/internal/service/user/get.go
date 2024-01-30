@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 	"user/internal/model"
 	"user/pkg/auth"
@@ -36,7 +35,7 @@ func (u userService) Login(ctx context.Context, email string, password string) (
 	user, err := u.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, userErrors.ErrWrongEmailOrPassword) {
-			return "", "", fmt.Errorf("dolbaeb")
+			return "", "", userErrors.ErrWrongEmailOrPassword
 		}
 		u.log.Error("error getting user", zap.Error(err), zap.String("op", op))
 		return "", "", err
