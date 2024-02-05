@@ -2,9 +2,9 @@ package room
 
 import (
 	"chat/internal/model"
+	chatErrors "chat/pkg/chat_errors"
 	"context"
 	"database/sql"
-	"fmt"
 )
 
 func (r roomRepository) GetByID(ctx context.Context, id string) (*model.Room, bool, error) {
@@ -14,7 +14,7 @@ func (r roomRepository) GetByID(ctx context.Context, id string) (*model.Room, bo
 	err := r.conn.QueryRow(ctx, query, id).Scan(&room.ID, &room.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, false, fmt.Errorf("room doesn't exist")
+			return nil, false, chatErrors.ErrRoomNotFound
 		}
 		return nil, false, err
 	}
