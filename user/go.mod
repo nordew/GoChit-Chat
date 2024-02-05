@@ -11,7 +11,7 @@ require (
 	github.com/jackc/pgconn v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/joho/godotenv v1.5.1
-	github.com/nordew/GoChitChat-External v0.0.0-20240128235120-0328ee339763
+	github.com/nordew/GoChitChat-External v0.0.0-20240203224233-0d389f77d860
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.18.0
 	google.golang.org/grpc v1.61.0

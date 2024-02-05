@@ -137,6 +137,8 @@ github.com/nordew/GoChitChat-External v0.0.0-20240128152551-e0e8114ab036 h1:OrYh
 github.com/nordew/GoChitChat-External v0.0.0-20240128152551-e0e8114ab036/go.mod h1:e3XKxIRUtTmh30XeGw6WsswrCWcgM3+JDkVGdSvv0qc=
 github.com/nordew/GoChitChat-External v0.0.0-20240128235120-0328ee339763 h1:uGacthoOs1d4AS71HWzIqywqIijUBcPAVUC8d+HLr9g=
 github.com/nordew/GoChitChat-External v0.0.0-20240128235120-0328ee339763/go.mod h1:e3XKxIRUtTmh30XeGw6WsswrCWcgM3+JDkVGdSvv0qc=
+github.com/nordew/GoChitChat-External v0.0.0-20240203224233-0d389f77d860 h1:0z/wkRL8NTkYmqNW4CTX2XJ7jbNaai0pBqBCqV8OJ2I=
+github.com/nordew/GoChitChat-External v0.0.0-20240203224233-0d389f77d860/go.mod h1:e3XKxIRUtTmh30XeGw6WsswrCWcgM3+JDkVGdSvv0qc=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
