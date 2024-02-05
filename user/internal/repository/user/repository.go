@@ -30,7 +30,6 @@ func NewUserRepository(db *pgxpool.Pool, log *zap.Logger) repository.UserReposit
 
 func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 	const op = "userRepo.Create"
-
 	sqlQuery := `
 		INSERT INTO users (id, name, email, password, role, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -38,7 +37,6 @@ func (u *userRepo) Create(ctx context.Context, user *model.User) error {
 
 	_, err := u.db.Exec(ctx, sqlQuery, user.ID, user.Name, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
-		u.log.Error("error creating user", zap.Error(err), zap.String("op", op))
 		return handleEmailConflictError(err)
 	}
 
@@ -53,8 +51,6 @@ func handleEmailConflictError(err error) error {
 }
 
 func (u *userRepo) GetById(ctx context.Context, id string) (*model.User, error) {
-	const op = "userRepo.Get"
-
 	sqlQuery := `SELECT id, name, email, password, role, created_at, updated_at FROM users WHERE id = $1`
 
 	var user repoModel.User
@@ -71,11 +67,9 @@ func (u *userRepo) GetById(ctx context.Context, id string) (*model.User, error) 
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			u.log.Error("user not found", zap.String("op", op))
 			return nil, userErrors.ErrWrongEmailOrPassword
 		}
 
-		u.log.Error("error getting user", zap.Error(err), zap.String("op", op))
 		return nil, err
 	}
 
@@ -83,8 +77,6 @@ func (u *userRepo) GetById(ctx context.Context, id string) (*model.User, error) 
 }
 
 func (u *userRepo) GetByEmail(ctx context.Context, email string) (*model.User, error) {
-	const op = "userRepo.Get"
-
 	sqlQuery := `SELECT id, name, email, password, role, created_at, updated_at FROM users WHERE email = $1`
 
 	var user repoModel.User
@@ -101,11 +93,9 @@ func (u *userRepo) GetByEmail(ctx context.Context, email string) (*model.User, e
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			u.log.Error("user not found", zap.String("op", op))
 			return nil, userErrors.ErrWrongEmailOrPassword
 		}
 
-		u.log.Error("error getting user", zap.Error(err), zap.String("op", op))
 		return nil, err
 	}
 
@@ -113,13 +103,10 @@ func (u *userRepo) GetByEmail(ctx context.Context, email string) (*model.User, e
 }
 
 func (u *userRepo) Update(ctx context.Context, user *model.User) error {
-	const op = "userRepo.Update"
-
 	sqlQuery := `UPDATE users SET name = $1, email = $2, password = $3, role = $4, updated_at = $5 WHERE id = $6`
 
 	_, err := u.db.Exec(ctx, sqlQuery, user.Name, user.Email, user.Password, user.Role, user.UpdatedAt, user.ID)
 	if err != nil {
-		u.log.Error("error updating user", zap.Error(err), zap.String("op", op))
 		return err
 	}
 
@@ -127,8 +114,6 @@ func (u *userRepo) Update(ctx context.Context, user *model.User) error {
 }
 
 func (u *userRepo) UpdateRefreshToken(ctx context.Context, id string, token string) error {
-	const op = "userRepo.UpdateRefreshToken"
-
 	sqlQuery := `UPDATE users SET refresh_token = $1 WHERE id = $2`
 
 	_, err := u.db.Exec(ctx, sqlQuery, token, id)
@@ -140,20 +125,16 @@ func (u *userRepo) UpdateRefreshToken(ctx context.Context, id string, token stri
 }
 
 func (u *userRepo) Delete(ctx context.Context, id string) error {
-	const op = "userRepo.Delete"
-
 	sqlQuery := `DELETE FROM users WHERE id = $1`
 
 	result, err := u.db.Exec(ctx, sqlQuery, id)
 	if err != nil {
-		u.log.Error("error deleting user", zap.Error(err), zap.String("op", op))
 		return err
 	}
 
 	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
 		err := fmt.Errorf("no rows were affected, user with ID %s not found", id)
-		u.log.Error("error deleting user", zap.Error(err), zap.String("op", op))
 		return err
 	}
 
