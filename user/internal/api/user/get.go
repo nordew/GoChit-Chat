@@ -49,3 +49,20 @@ func (i *Implementation) Login(ctx context.Context, req *desc.LoginUserRequest) 
 
 	return resp, nil
 }
+
+func (i *Implementation) ParseAccessToken(ctx context.Context, req *desc.ParseAccessTokenRequest) (*desc.ParseAccessTokenResponse, error) {
+	const op = "user.Implementation.ParseAccessToken"
+
+	userID, name, err := i.userService.ParseAccessToken(ctx, req.Token)
+	if err != nil {
+		i.log.Error("error parsing token", zap.Error(err), zap.String("op", op))
+		return nil, err
+	}
+
+	resp := &desc.ParseAccessTokenResponse{
+		UserID: userID,
+		Name:   name,
+	}
+
+	return resp, nil
+}
