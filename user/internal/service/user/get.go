@@ -51,6 +51,7 @@ func (u userService) Login(ctx context.Context, email string, password string) (
 
 	accessToken, refreshToken, err := u.auth.GenerateTokens(&auth.GenerateTokenClaimsOptions{
 		UserId: user.ID,
+		Name:   user.Name,
 	})
 	if err != nil {
 		u.log.Error("error generating token", zap.Error(err), zap.String("op", op))
@@ -59,7 +60,12 @@ func (u userService) Login(ctx context.Context, email string, password string) (
 
 	var userWithUpdatedTokens = &model.User{
 		ID:           user.ID,
+		Name:         user.Name,
+		Email:        user.Email,
+		Password:     user.Password,
+		Role:         user.Role,
 		RefreshToken: refreshToken,
+		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    time.Now(),
 	}
 
@@ -70,4 +76,13 @@ func (u userService) Login(ctx context.Context, email string, password string) (
 	}
 
 	return accessToken, refreshToken, nil
+}
+
+func (s userService) ParseAccessToken(ctx context.Context, token string) (string, string, error) {
+	claims, err := s.auth.ParseToken(token)
+	if err != nil {
+		return "", "", err
+	}
+
+	return claims.UserId, claims.Name, nil
 }
