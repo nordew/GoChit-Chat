@@ -6,8 +6,16 @@ type Authenticator interface {
 
 	// GenerateRefreshToken generates refresh token
 	GenerateRefreshToken(id string) (string, error)
+
+	ParseToken(accessToken string) (*ParseTokenClaimsOutput, error)
 }
 
 type GenerateTokenClaimsOptions struct {
 	UserId string
+	Name   string
+}
+
+type ParseTokenClaimsOutput struct {
+	UserId string
+	Name   string
 }
