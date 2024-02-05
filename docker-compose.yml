@@ -23,6 +23,16 @@ services:
     networks:
       - chat-network
 
+  chat:
+    image: chat:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - chat-user
+    networks:
+      - chat-network
+
 networks:
   chat-network:
     driver: bridge
