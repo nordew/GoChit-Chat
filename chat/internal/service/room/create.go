@@ -3,6 +3,7 @@ package room
 import (
 	"chat/internal/model"
 	"chat/internal/service"
+	chatErrors "chat/pkg/chat_errors"
 	"context"
 	"github.com/google/uuid"
 )
@@ -22,7 +23,7 @@ func (s *roomService) CreateRoom(ctx context.Context, req *service.CreateRoomReq
 
 	if err := s.roomRepo.Create(ctx, room); err != nil {
 		s.logger.Error("failed to create room", op, err.Error())
-		//return "", service.ErrInternal
+		return "", chatErrors.ErrInternal
 	}
 
 	return id, nil
