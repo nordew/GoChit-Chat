@@ -53,6 +53,7 @@ func (u *userService) Create(ctx context.Context, user *model.User) (*service.Cr
 
 	accessToken, refreshToken, err := u.auth.GenerateTokens(&auth.GenerateTokenClaimsOptions{
 		UserId: id.String(),
+		Name:   user.Name,
 	})
 	if err != nil {
 		u.log.Error("error generating token", zap.Error(err), zap.String("op", op))
