@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -22,6 +24,7 @@ func NewAuth(signKey string, logger *zap.Logger) Authenticator {
 
 type TokenClaims struct {
 	UserId string
+	Name   string
 	jwt.RegisteredClaims
 }
 
@@ -32,6 +35,7 @@ func (s *jwtAuthenticator) GenerateTokens(options *GenerateTokenClaimsOptions) (
 
 	claims := TokenClaims{
 		UserId: options.UserId,
+		Name:   options.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -85,4 +89,40 @@ func (s *jwtAuthenticator) GenerateRefreshToken(id string) (string, error) {
 	}
 
 	return signedRefreshToken, nil
+}
+
+func (s *jwtAuthenticator) ParseToken(accessToken string) (*ParseTokenClaimsOutput, error) {
+	accessToken = strings.TrimPrefix(accessToken, "Bearer ")
+
+	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(s.signKey), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse jwt token: %w", err)
+	}
+
+	if !token.Valid {
+		s.logger.Error("token is not valid")
+		return nil, fmt.Errorf("token is not valid")
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+
+	id := claims["UserId"]
+	if id == nil {
+		s.logger.Error("token is not valid: missing role")
+		return nil, fmt.Errorf("token is not valid")
+	}
+
+	name := claims["Name"]
+	if name == nil {
+		s.logger.Error("token is not valid: missing subject")
+		return nil, fmt.Errorf("token is not valid")
+	}
+
+	return &ParseTokenClaimsOutput{UserId: fmt.Sprint(id), Name: fmt.Sprint(name)}, nil
 }
