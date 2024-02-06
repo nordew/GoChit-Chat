@@ -11,6 +11,7 @@ var (
 	ErrInvalidEmail         = errors.New("invalid email")
 	ErrInvalidPassword      = errors.New("invalid password")
 	ErrWrongEmailOrPassword = errors.New("wrong email or password")
+	ErrUserNotFound         = errors.New("user not found")
 )
 
 type CustomErr struct {
