@@ -12,7 +12,8 @@ type UserService interface {
 	Update(ctx context.Context, req *UpdateUserRequest) *userErrors.CustomErr
 	Delete(ctx context.Context, id string) *userErrors.CustomErr
 	Login(ctx context.Context, email string, password string) (string, string, *userErrors.CustomErr)
-	ParseAccessToken(ctx context.Context, token string) (string, string, error)
+	ParseAccessToken(ctx context.Context, token string) (string, string, *userErrors.CustomErr)
+	Refresh(ctx context.Context, token string) (string, string, *userErrors.CustomErr)
 }
 
 type CreateUserResponse struct {
