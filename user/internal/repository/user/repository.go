@@ -102,10 +102,37 @@ func (u *userRepo) GetByEmail(ctx context.Context, email string) (*model.User, e
 	return dao.ToUserFromRepo(&user), nil
 }
 
-func (u *userRepo) Update(ctx context.Context, user *model.User) error {
-	sqlQuery := `UPDATE users SET name = $1, email = $2, password = $3, role = $4, updated_at = $5 WHERE id = $6`
+func (u *userRepo) GetByToken(ctx context.Context, token string) (*model.User, error) {
+	sqlQuery := "SELECT id, name, email, password, role, refresh_token, created_at, updated_at FROM users WHERE refresh_token = $1"
 
-	_, err := u.db.Exec(ctx, sqlQuery, user.Name, user.Email, user.Password, user.Role, user.UpdatedAt, user.ID)
+	var user repoModel.User
+
+	err := u.db.QueryRow(ctx, sqlQuery, token).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.RefreshToken,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, userErrors.ErrUserNotFound
+		}
+
+		return nil, err
+	}
+
+	return dao.ToUserFromRepo(&user), nil
+}
+
+func (u *userRepo) Update(ctx context.Context, user *model.User) error {
+	sqlQuery := `UPDATE users SET name = $1, email = $2, password = $3, role = $4, refresh_token = $5, updated_at = $6 WHERE id = $7`
+
+	_, err := u.db.Exec(ctx, sqlQuery, user.Name, user.Email, user.Password, user.Role, user.RefreshToken, user.UpdatedAt, user.ID)
 	if err != nil {
 		return err
 	}
