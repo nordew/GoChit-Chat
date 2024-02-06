@@ -65,7 +65,6 @@ func (u userService) Login(ctx context.Context, email string, password string) (
 		Password:     user.Password,
 		Role:         user.Role,
 		RefreshToken: refreshToken,
-		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    time.Now(),
 	}
 
@@ -78,10 +77,14 @@ func (u userService) Login(ctx context.Context, email string, password string) (
 	return accessToken, refreshToken, nil
 }
 
-func (s userService) ParseAccessToken(ctx context.Context, token string) (string, string, error) {
+func (s userService) ParseAccessToken(ctx context.Context, token string) (string, string, *userErrors.CustomErr) {
 	claims, err := s.auth.ParseToken(token)
 	if err != nil {
-		return "", "", err
+		return "", "", &userErrors.CustomErr{
+			Err:  err,
+			Msg:  "token invalid",
+			Code: codes.InvalidArgument,
+		}
 	}
 
 	return claims.UserId, claims.Name, nil
