@@ -55,13 +55,30 @@ func (i *Implementation) ParseAccessToken(ctx context.Context, req *desc.ParseAc
 
 	userID, name, err := i.userService.ParseAccessToken(ctx, req.Token)
 	if err != nil {
-		i.log.Error("error parsing token", zap.Error(err), zap.String("op", op))
-		return nil, err
+		i.log.Error("error parsing token", zap.Error(err.Err), zap.String("op", op))
+		return nil, status.Error(err.Code, err.Msg)
 	}
 
 	resp := &desc.ParseAccessTokenResponse{
 		UserID: userID,
 		Name:   name,
+	}
+
+	return resp, nil
+}
+
+func (i *Implementation) Refresh(ctx context.Context, req *desc.RefreshUserRequest) (*desc.RefreshUserResponse, error) {
+	const op = "user.Implementation.Refresh"
+
+	accessToken, refreshToken, err := i.userService.Refresh(ctx, req.GetRefreshToken())
+	if err != nil {
+		i.log.Error("error refreshing tokens", zap.Error(err.Err), zap.String("op", op))
+		return nil, status.Error(err.Code, err.Msg)
+	}
+
+	resp := &desc.RefreshUserResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}
 
 	return resp, nil
