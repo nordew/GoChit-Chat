@@ -2,14 +2,44 @@ package user
 
 import (
 	"context"
+	"errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"time"
 	"unicode/utf8"
 	"user/internal/model"
 	"user/internal/service"
+	"user/pkg/auth"
 	userErrors "user/pkg/user_errors"
 )
+
+func (u *userService) Refresh(ctx context.Context, token string) (string, string, *userErrors.CustomErr) {
+	const op = "userService.Refresh"
+
+	user, err := u.userRepo.GetByToken(ctx, token)
+	if err != nil {
+		if errors.Is(err, userErrors.ErrUserNotFound) {
+			u.log.Error("user not found", zap.String("op", op))
+			return "", "", userErrors.New(err, "invalid refresh token", codes.InvalidArgument)
+		}
+	}
+
+	accessToken, refreshToken, err := u.auth.GenerateTokens(&auth.GenerateTokenClaimsOptions{
+		UserId: user.ID,
+		Name:   user.Name,
+	})
+	if err != nil {
+		u.log.Error("failed to generate tokens", zap.Error(err), zap.String("op", op))
+		return "", "", userErrors.NewInternalErr(err)
+	}
+
+	if err := u.userRepo.UpdateRefreshToken(ctx, user.ID, refreshToken); err != nil {
+		u.log.Error("failed to update refresh token", zap.Error(err), zap.String("op", op))
+		return "", "", userErrors.NewInternalErr(err)
+	}
+
+	return accessToken, refreshToken, nil
+}
 
 func (u *userService) Update(ctx context.Context, request *service.UpdateUserRequest) *userErrors.CustomErr {
 	const op = "userService.Update"
